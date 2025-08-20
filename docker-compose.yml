@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: pao_db
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: Deus1010 # troque por senha forte
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U appuser"]
+      interval: 10s
+      retries: 5
+      start_period: 20s
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://appuser:SENHA_FORTE@db:5432/pao_db?schema=public
+      PORT: 3001
+    ports:
+      - "3001:3001"
+volumes:
+  pgdata:
