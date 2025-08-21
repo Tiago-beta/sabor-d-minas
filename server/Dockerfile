@@ -1,8 +1,10 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
+# Instalar dependências (incluindo dev) para compilar TypeScript
 COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+ENV NODE_ENV=development
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 COPY prisma ./prisma
 RUN npx prisma generate
