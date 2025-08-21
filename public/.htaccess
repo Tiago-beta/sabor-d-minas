@@ -1,0 +1,25 @@
+<IfModule mod_rewrite.c>
+  Options -MultiViews
+  RewriteEngine On
+  # Ajuste se o app estiver em um subdiretório (ex: /app/)
+  RewriteBase /
+
+  # Arquivos e diretórios existentes seguem normalmente
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Todas as outras rotas (SPA / React Router) redirecionam para index.html
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# Melhora cache de assets estáticos (opcional)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 30 days"
+</IfModule>
