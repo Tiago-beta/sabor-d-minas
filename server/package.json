@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+  "build": "tsc -p tsconfig.json --types node",
   "start": "node dist/index.js",
   "start:prod": "npx prisma migrate deploy && node dist/index.js",
     "prisma:generate": "prisma generate",
