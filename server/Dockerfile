@@ -1,12 +1,16 @@
-FROM node:20-alpine AS base
+###############################
+# Build stage
+###############################
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
-# Instalar dependências (incluindo dev) para compilar TypeScript
+# Install system deps (openssl for Prisma, ca-certificates)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	openssl ca-certificates && \
+	rm -rf /var/lib/apt/lists/*
+
 COPY package.json package-lock.json* ./
-ENV NODE_ENV=development
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-# Debug: list installed @types to confirm @types/node presence during build
-RUN echo "Installed @types packages:"; if [ -d node_modules/@types ]; then ls -1 node_modules/@types; else echo "@types directory missing"; fi; if [ ! -d node_modules/@types/node ]; then echo "Creating temp node types marker"; mkdir -p node_modules/@types/node; echo "// placeholder" > node_modules/@types/node/index.d.ts; fi
+RUN npm ci --legacy-peer-deps
 
 COPY prisma ./prisma
 RUN npx prisma generate
@@ -14,9 +18,24 @@ RUN npx prisma generate
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npx tsc --showConfig | head -n 40 || true
-RUN echo "Running tsc with explicit types..."; npx tsc -p tsconfig.json --types node || (echo "tsc failed, showing node_modules/@types contents:"; ls -R node_modules/@types | head -n 200; exit 1)
+RUN npm run build
+# Remove dev dependencies to shrink final image
+RUN npm prune --omit=dev
 
+###############################
+# Runtime stage
+###############################
+FROM node:20-bookworm-slim AS runtime
+WORKDIR /app
 ENV NODE_ENV=production
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	openssl ca-certificates && \
+	rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/dist ./dist
+
 EXPOSE 3001
-CMD ["sh","-c","(npx prisma migrate deploy || npx prisma db push) && node dist/index.js"]
+CMD ["sh","-c","npx prisma migrate deploy && node dist/index.js"]
