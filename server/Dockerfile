@@ -14,7 +14,8 @@ RUN npx prisma generate
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npm run build
+RUN npx tsc --showConfig | head -n 40 || true
+RUN npx tsc -p tsconfig.json --types node
 
 ENV NODE_ENV=production
 EXPOSE 3001
