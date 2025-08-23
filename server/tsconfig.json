@@ -9,8 +9,7 @@
     "strict": true,
     "outDir": "dist",
     "resolveJsonModule": true,
-    "types": ["node"],
-    "typeRoots": ["./node_modules/@types"],
+  "typeRoots": ["./node_modules/@types"],
     "allowImportingTsExtensions": false
   },
   "include": ["src", "src/types.d.ts", "src/global.d.ts"],
