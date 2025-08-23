@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=development
 RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+# Debug: list installed @types to confirm @types/node presence during build
+RUN echo "Installed @types packages:" && ls -1 node_modules/@types || echo "@types directory missing"
 
 COPY prisma ./prisma
 RUN npx prisma generate
