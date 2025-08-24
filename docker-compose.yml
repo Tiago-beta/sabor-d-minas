@@ -1,31 +1,36 @@
-version: '3.9'
+version: "3.9"
+
 services:
   db:
     image: postgres:16
-    restart: always
+    container_name: db
     environment:
-      POSTGRES_DB: pao_db
       POSTGRES_USER: appuser
-      POSTGRES_PASSWORD: Deus1010 # troque por senha forte
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: pao_db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U appuser"]
+      test: ["CMD-SHELL", "pg_isready -U appuser -d pao_db"]
       interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 20s
+    restart: unless-stopped
+
   api:
     build:
       context: ./server
       dockerfile: Dockerfile
+    container_name: api
     depends_on:
       db:
         condition: service_healthy
     environment:
-  # Use externally provided DATABASE_URL (configure in Coolify UI or .env file)
-  DATABASE_URL: ${DATABASE_URL}
-  PORT: 3001
-    ports:
-      - "3001:3001"
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["bash","-c","npx prisma migrate deploy && node dist/index.js"]
+    restart: unless-stopped
+
 volumes:
-  pgdata:
+  db_data:
