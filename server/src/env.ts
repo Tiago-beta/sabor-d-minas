@@ -1,15 +1,11 @@
-/// <reference types="node" />
-// Fallback: ensure 'process' is declared even if @types/node not loaded
-// (container build environment issue).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const process: any;
-import { config } from 'dotenv';
+import 'dotenv/config';
 import { z } from 'zod';
-config();
 
+// Esquema de validação das variáveis de ambiente.
 const schema = z.object({
-  DATABASE_URL: z.string().url(),
-  PORT: z.string().regex(/^[0-9]+$/).transform(Number).default('3001')
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL ausente'),
+  PORT: z.coerce.number().default(3001),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('production')
 });
 
 export const env = schema.parse(process.env);

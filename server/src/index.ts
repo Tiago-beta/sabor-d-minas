@@ -1,13 +1,9 @@
-/// <reference types="node" />
-// Fallback declaration (see env.ts comment)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare const process: any;
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { env } from './env';
+import { env } from './env.js';
 import { produtosRoutes } from './routes/produtos';
 
 const app = Fastify({ logger: true });
