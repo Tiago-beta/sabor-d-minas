@@ -4,7 +4,7 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { env } from './env.js';
-import { produtosRoutes } from './routes/produtos';
+import { produtosRoutes } from './routes/produtos.js';
 
 const app = Fastify({ logger: true });
 

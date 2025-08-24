@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { listProdutos, createProduto } from '../domain/produtos.service';
+import { listProdutos, createProduto } from '../domain/produtos.service.js';
 
 export async function produtosRoutes(app: FastifyInstance) {
   app.get('/produtos', async () => {
