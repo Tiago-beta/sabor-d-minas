@@ -29,6 +29,12 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
+    # Publicar porta para teste direto (substitui expose temporariamente)
+    ports:
+      - "3001:3001"
+    labels:
+      # Garante que o Traefik use a porta 3001 dentro do container
+      - "traefik.http.services.api.loadbalancer.server.port=3001"
     command: ["bash","-c","npx prisma migrate deploy && node dist/index.js"]
     restart: unless-stopped
 
