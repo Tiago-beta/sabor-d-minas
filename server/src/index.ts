@@ -16,6 +16,8 @@ await app.register(swaggerUi, { routePrefix: '/docs' });
 await app.register(produtosRoutes, { prefix: '/api' });
 
 app.get('/health', async () => ({ status: 'ok' }));
+// Provide namespaced health endpoint for consistency
+app.get('/api/health', async () => ({ status: 'ok' }));
 
 app.listen({ port: env.PORT, host: '0.0.0.0' }).catch(err => {
   app.log.error(err);
