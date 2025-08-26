@@ -37,28 +37,61 @@ services:
       - "3001"
     labels:
       # Garante que o Traefik use a porta 3001 dentro do container
-      - "traefik.enable=true"
-      - "traefik.http.services.api.loadbalancer.server.port=3001"
-  - "traefik.http.services.api.loadbalancer.server.scheme=http"
-      - "traefik.http.services.api.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.routers.api.rule=Host(`api.sabordminas.com`)"
-  - "traefik.http.routers.api.entrypoints=http,https"
-      - "traefik.http.routers.api.tls=true"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-    networks:
-      - coolify
-    # Expor temporariamente a porta para teste direto; remover depois que Traefik estiver roteando
-    ports:
-      - "3001:3001"
-    healthcheck:
-  # Usa Node (fetch nativo no Node 18+) para evitar depender de wget/curl na imagem runtime
-  test: ["CMD-SHELL","node -e \"fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 10s
-    command: ["bash","-c","npx prisma migrate deploy && node dist/index.js"]
-    restart: unless-stopped
+      version: "3.9"
 
-volumes:
-  db_data:
+      networks:
+        coolify:
+          external: true
+
+      services:
+        db:
+          image: postgres:16
+          networks:
+            - coolify
+          environment:
+            POSTGRES_USER: appuser
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: pao_db
+          volumes:
+            - db_data:/var/lib/postgresql/data
+          healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U appuser -d pao_db"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+          restart: unless-stopped
+
+        api:
+          build:
+            context: ./server
+            dockerfile: Dockerfile
+          depends_on:
+            db:
+              condition: service_healthy
+          environment:
+            NODE_ENV: production
+            PORT: 3001
+            DATABASE_URL: ${DATABASE_URL}
+          ports:  # temporário para debug
+            - "3001:3001"
+          labels:
+            - traefik.enable=true
+            - traefik.http.services.api.loadbalancer.server.port=3001
+            - traefik.http.services.api.loadbalancer.server.scheme=http
+            - traefik.http.services.api.loadbalancer.healthcheck.path=/health
+            - traefik.http.routers.api.rule=Host(`api.sabordminas.com`)
+            - traefik.http.routers.api.entrypoints=http,https
+            - traefik.http.routers.api.tls=true
+            - traefik.http.routers.api.tls.certresolver=letsencrypt
+          healthcheck:
+            test: ["CMD-SHELL","node -e \"fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+            start_period: 10s
+          networks:
+            - coolify
+          restart: unless-stopped
+
+      volumes:
+        db_data:
