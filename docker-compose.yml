@@ -1,7 +1,9 @@
+name: sabor-d-minas
 version: "3.9"
 
 services:
   db:
+  profiles: ["default"]
     image: postgres:16
     container_name: db
     environment:
@@ -18,6 +20,7 @@ services:
     restart: unless-stopped
 
   api:
+  profiles: ["default"]
     build:
       context: ./server
       dockerfile: Dockerfile
