@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Faster & more reliable apt (force IPv4 + mirror switch) kept in an early layer
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
-	&& sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list \
+	&& if [ -f /etc/apt/sources.list ]; then sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list; else echo 'deb http://mirror.azure.edge.kernel.org/debian bookworm main\ndeb http://mirror.azure.edge.kernel.org/debian bookworm-updates main\ndeb http://mirror.azure.edge.kernel.org/debian-security bookworm-security main' > /etc/apt/sources.list; fi \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends openssl ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
@@ -50,7 +50,7 @@ ENV NODE_ENV=production
 
 # System deps only (match what build artifacts need)
 RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
-	&& sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list \
+	&& if [ -f /etc/apt/sources.list ]; then sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list; else echo 'deb http://mirror.azure.edge.kernel.org/debian bookworm main\ndeb http://mirror.azure.edge.kernel.org/debian bookworm-updates main\ndeb http://mirror.azure.edge.kernel.org/debian-security bookworm-security main' > /etc/apt/sources.list; fi \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends openssl ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
