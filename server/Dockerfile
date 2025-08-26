@@ -35,6 +35,8 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/prisma ./prisma
+COPY --from=deps /app/package.json ./
+COPY --from=deps /app/package-lock.json ./
 COPY tsconfig.json ./
 COPY src ./src
 
