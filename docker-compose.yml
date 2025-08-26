@@ -42,7 +42,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.api.loadbalancer.server.port=3001"
       - "traefik.http.routers.api.rule=Host(`api.sabordminas.com`)"
-      - "traefik.http.routers.api.entrypoints=web,websecure"
+  - "traefik.http.routers.api.entrypoints=http,https"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.docker.network=coolify"
