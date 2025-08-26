@@ -7,7 +7,6 @@ networks:
 services:
   db:
     image: postgres:16
-    container_name: db
     networks:
       - coolify
     environment:
@@ -26,7 +25,6 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: api
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +39,7 @@ services:
       # Garante que o Traefik use a porta 3001 dentro do container
       - "traefik.enable=true"
       - "traefik.http.services.api.loadbalancer.server.port=3001"
+  - "traefik.http.services.api.loadbalancer.server.scheme=http"
       - "traefik.http.routers.api.rule=Host(`api.sabordminas.com`)"
   - "traefik.http.routers.api.entrypoints=http,https"
       - "traefik.http.routers.api.tls=true"
