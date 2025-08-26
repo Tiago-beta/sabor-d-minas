@@ -1,43 +1,59 @@
 ###############################
-# Build stage
+# syntax directive enables newer BuildKit features (if enabled)
 ###############################
-FROM node:20-bookworm-slim AS build
+# syntax=docker/dockerfile:1.7
+
+###############################
+# Stage 1: deps (npm install + prisma generate) — cached while package.json unchanged
+###############################
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
 
-# Install system deps (openssl for Prisma, ca-certificates)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	openssl ca-certificates && \
-	rm -rf /var/lib/apt/lists/*
+# Faster & more reliable apt (force IPv4 + mirror switch) kept in an early layer
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
+	&& sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json* ./
-# Configure npm for more robust network handling and leverage cache. Retry loop reduces transient failures (exit code 146).
 RUN npm set fetch-retries=5 \
-	&& npm set fetch-retry-factor=2 \
-	&& npm set fetch-retry-mintimeout=20000 \
-	&& npm set fetch-retry-maxtimeout=120000 \
-	&& npm set registry=https://registry.npmjs.org/ \
-	&& for i in 1 2 3; do npm ci --legacy-peer-deps && break || (echo "npm ci failed attempt $i, retrying..." && sleep 8); done
+		&& npm set fetch-retry-factor=2 \
+		&& npm set fetch-retry-mintimeout=20000 \
+		&& npm set fetch-retry-maxtimeout=120000 \
+		&& npm ci --legacy-peer-deps
 
 COPY prisma ./prisma
 RUN npx prisma generate
 
+###############################
+# Stage 2: build (only app source changes invalidate)
+###############################
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/prisma ./prisma
 COPY tsconfig.json ./
 COPY src ./src
 
-RUN npm run build
-# Remove dev dependencies to shrink final image
-RUN npm prune --omit=dev
+RUN npm run build \
+	&& npm prune --omit=dev
 
 ###############################
-# Runtime stage
+# Stage 3: runtime (smallest final image)
 ###############################
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	openssl ca-certificates && \
-	rm -rf /var/lib/apt/lists/*
+# System deps only (match what build artifacts need)
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
+	&& sed -i 's|deb.debian.org|mirror.azure.edge.kernel.org|g' /etc/apt/sources.list \
+	&& apt-get update \
+	&& apt-get install -y --no-install-recommends openssl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
