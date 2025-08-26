@@ -40,6 +40,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.api.loadbalancer.server.port=3001"
   - "traefik.http.services.api.loadbalancer.server.scheme=http"
+      - "traefik.http.services.api.loadbalancer.healthcheck.path=/health"
       - "traefik.http.routers.api.rule=Host(`api.sabordminas.com`)"
   - "traefik.http.routers.api.entrypoints=http,https"
       - "traefik.http.routers.api.tls=true"
@@ -47,6 +48,12 @@ services:
       - "traefik.docker.network=coolify"
     networks:
       - coolify
+    healthcheck:
+      test: ["CMD-SHELL","wget -q -O - http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     command: ["bash","-c","npx prisma migrate deploy && node dist/index.js"]
     restart: unless-stopped
 
