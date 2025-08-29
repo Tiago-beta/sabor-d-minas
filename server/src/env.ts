@@ -5,7 +5,9 @@ import { z } from 'zod';
 const schema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL ausente'),
   PORT: z.coerce.number().default(3001),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('production')
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('production'),
+  // Lista de origens separadas por vírgula para CORS (ex: https://app.meudominio.com,https://www.meudominio.com)
+  ALLOWED_ORIGINS: z.string().optional()
 });
 
 export const env = schema.parse(process.env);
